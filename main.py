@@ -1,12 +1,16 @@
+from typing import Optional
 import discord
-from discord.ext import commands
+from discord.ext import commands,tasks
 from discord import app_commands
 import os
 from dotenv import load_dotenv
 import asyncio
+from discord.ui import Button
+import datetime
 from discord.app_commands import Choice
 import json
 import aiohttp
+import re
 import random
 load_dotenv()
 intents = discord.Intents.all()
@@ -88,7 +92,7 @@ async def convert_seconds(seconds):
     return hours, minutes, seconds
 
 async def holder(interaction: discord.Interaction):
-  role = interaction.guild.get_role(1083474077282468021)
+  role = interaction.guild.get_role(1123573342738329650)
   if role in interaction.user.roles:
     return True
   await interaction.response.send_message(
@@ -108,8 +112,34 @@ async def owner(interaction: discord.Interaction):  # Me or Nash
     ephemeral=True)
     return False    
     
-  
+class SimpleView(discord.ui.View):
     
+        
+    def __init__(self, timeout=None):
+        super().__init__(timeout=timeout)
+        self.role = None
+        self.ListofPeople = []
+        self.em = None
+        self.message = None
+        
+        
+    @discord.ui.button(label="Enter Giveaway")
+    async def GiveAway(self,interaction: discord.Interaction,button:discord.ui.Button):
+        if not (self.role in interaction.user.roles):
+            await interaction.response.send_message(f"I am sorry, only people with <@&{self.role.id}> can join.",ephemeral=True)
+            
+        if interaction.user in self.ListofPeople:
+            await interaction.response.send_message("You have already joined this giveaway!",ephemeral=True)
+        else:
+            await interaction.response.send_message("You have joined this giveaway!",ephemeral=True)
+            self.ListofPeople.append(interaction.user)
+            self.em.set_field_at(4,name="",value= f":large_blue_diamond: Number of Participants: {str(len(self.ListofPeople))}",inline= False)
+            await self.message.edit_original_response(embed=self.em,view=self)
+            
+
+  
+
+        
 @client.event
 async def on_ready():
     print('Doonz is running! Currently serving {0.user}'.format(client))
@@ -129,13 +159,17 @@ async def on_message(message):
     if validUser:
         await addMoney(str(message.author.id),random.randint(1, 5))
 
-
+async def CreateAccount(userid,matic,twitter):
+    users = await getBankData()
+    users[userid] = {"balance": 0, "WalletAddress": matic,"TwitterAccount":twitter}
+    with open ("bank.json","w") as f:
+        json.dump(users,f)    
+    
 
 
 @client.tree.command(name="joindoonz", description="registering your account in Doonz's Discord eco system!")
 async def joindoonz(interaction: discord.Interaction,matic_address: str,twitter_account: str):
     users = await getBankData()
-    print(users)
     if str(interaction.user.id) in users:
         await interaction.response.send_message("You already have an account!",ephemeral=True)
         return False
@@ -157,6 +191,61 @@ async def balance(interaction: discord.Interaction):
     except:
         await interaction.response.send_message(content="Please create an account first by using `/joindoonz` command.",ephemeral=True)
         
+
+async def generategiveaway(interaction: discord.Interaction,giveaway_minutes: int,prize: str,winners: int,role_limit: discord.Role):
+
+    view = SimpleView(timeout=giveaway_minutes *60)
+    view.role = role_limit
+    em = discord.Embed(title=prize,color=discord.Color.yellow())
+    em.add_field(name="",value=f":large_blue_diamond: Hosted By: <@{interaction.user.id}>",inline=False)
+    EndTime = datetime.datetime.now() + datetime.timedelta(seconds= giveaway_minutes*60 )
+    DisplayedTime = EndTime.timestamp()
+    em.add_field(name="",value= f":large_blue_diamond: Allowed Role: <@&{role_limit.id}>",inline=False)
+    em.add_field(name="",value= f":large_blue_diamond: Ends At: {discord.utils.format_dt(datetime.datetime.fromtimestamp(DisplayedTime), 'R')}",inline=False)
+    em.add_field(name="",value= f":large_blue_diamond: Number of Winners: {winners}",inline=False)
+    em.add_field(name="",value= f":large_blue_diamond: Number of Participants: {str(0)}",inline=False)
+    view.em = em
+    GiveAwayMessage = await interaction.response.send_message(embed=em,view=view)
+    view.message = interaction
+    await asyncio.sleep(giveaway_minutes * 60)
+    for i in view.children:
+        i.disabled = True
+    await interaction.edit_original_response(embed=em,view=view) #Disables the button
+    WinnerList = []
+    if len(view.ListofPeople) == 0:
+        await interaction.followup.send("Oh no, it seems like no one joined the giveaway :(")
+        return
+    for i in range(winners):
+        if winners - i >= len(view.ListofPeople): # 3 winners 2 participants 
+            Winner = random.choice(view.ListofPeople)
+            WinnerList.append(Winner)
+            view.ListofPeople.pop(view.ListofPeople.index(Winner))
+        else:
+            break
+    if len(WinnerList):
+        StringOfWinners = ""
+        for winner in WinnerList:
+            winmention = "<@" + str(winner.id) + ">"
+            StringOfWinners += winmention
+
+            
+        await interaction.followup.send(f"Congratulations to {StringOfWinners}!")
+        return StringOfWinners
+            
+@client.tree.command(name="create_giveaway", description="Creates a giveaway!")
+@commands.check(owner)
+async def create_giveaway(interaction: discord.Interaction,giveaway_minutes: int,prize: str,winners: int,role_limit: discord.Role):
+    await generategiveaway(interaction,giveaway_minutes,prize,winners,role_limit)
+        
+        
+@tasks.loop(seconds=10)
+async def dailygiveaway(interaction: discord.Interaction):
+    channel = client.get_channel(1139357988591784037)
+    role = discord.utils.get(interaction.guild.roles, id=1123573342738329650)
+    Winner = await create_giveaway(interaction,604,"Daily Coins Giveaway",1,role)
+    WinnerID = re.search(r'\d',Winner).group()
+    await add_money(str(WinnerID),100)
+    
         
 @client.tree.command(name="edit_matic_wallet", description="Changes the matic wallet you saved in the eco bot")
 async def edit_matic_wallet(interaction: discord.Interaction,matic_address: str): 
@@ -247,7 +336,7 @@ async def add_money(interaction: discord.Interaction,send_to:discord.User,amount
     await interaction.response.send_message(embed=em)
  
 
-    
+
     
                 
 @client.tree.command(name="dailycoins", description="Collect daily coins")
