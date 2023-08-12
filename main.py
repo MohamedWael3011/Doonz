@@ -18,9 +18,9 @@ intents = discord.Intents.all()
 client = commands.Bot(command_prefix='.', intents=intents)
 
 ShopItems = {
-    "Doonz Editions NFT - Claimable Ticket -" :(2000,"Your ticket to claim a NFT from Doonz NFT Editions Collections on OpenSea"),
-    "Doonz NFT Airdrop - Claimable Ticket -" :(3000,"Your ticket to clain a Doonz NFT airdrop."),
-    "Doonz Raffle Ticket" :(100,"Your ticked to join special raffles here on discord. **Please not that you will be granted the role after claiming this shop item and role will be removed after the raffle ends.**"), 
+    "Doonz Editions NFT - Claimable Ticket -" :(4000,"Your ticket to claim a NFT from Doonz NFT Editions Collections on OpenSea"),
+    "Doonz NFT Airdrop - Claimable Ticket -" :(6000,"Your ticket to clain a Doonz NFT airdrop."),
+    "Doonz Raffle Ticket" :(300,"Your ticked to join special raffles here on discord. **Please not that you will be granted the role after claiming this shop item and role will be removed after the raffle ends.**"), 
 }
 
 RoleMappedToReward = {
@@ -31,36 +31,9 @@ RoleMappedToReward = {
     1123573342738329650:10,
     1083474077282468021:20
 }
-#Fetching OpenSea
-async def fetch_data():
-    url = "https://api.opensea.io/api/v1/events?only_opensea=true&token_id=711&asset_contract_address=0x2ef45389859b6d3c99b789352121b2d250e3d5b0&collection_slug=doonz&event_type=transfer"
-
-    headers = {
-        "accept": "application/json",
-        "X-API-KEY": "293ceb912ff74fccaa3c945bcc5c06bc"
-    }
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as response:
-            if response.status == 200:
-                data = await response.json()
-                return data
-            else:
-                print(f"Failed to fetch data. Status code: {response.status}")
-                return None
 
 
-async def send_notification(event):
-    embed = discord.Embed(
-        title='New NFT Minted!',
-        description=f'An NFT was minted in the collection: {event["collection"]["name"]}',
-        color=discord.Color.green()
-    )
-    embed.add_field(name='Token ID', value=event['asset']['token_id'])
-    embed.add_field(name='Seller', value=event['seller']['address'])
-    embed.set_thumbnail(url=event['asset']['image_url'])
-    MOKA = await client.fetch_user("368776198068895745")
-    await MOKA.send(embed=embed)
+
     
 async def getBankData():
     with open ("bank.json","r") as f:
@@ -144,6 +117,7 @@ class SimpleView(discord.ui.View):
 async def on_ready():
     print('Doonz is running! Currently serving {0.user}'.format(client))
     await client.tree.sync()
+    await dailygiveaway.start()
 
 cd_mapping = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.user)
 @client.event
@@ -238,15 +212,59 @@ async def create_giveaway(interaction: discord.Interaction,giveaway_minutes: int
     await generategiveaway(interaction,giveaway_minutes,prize,winners,role_limit)
         
         
-@tasks.loop(seconds=10)
-async def dailygiveaway(interaction: discord.Interaction):
-    channel = client.get_channel(1139357988591784037)
-    role = discord.utils.get(interaction.guild.roles, id=1123573342738329650)
-    Winner = await create_giveaway(interaction,604,"Daily Coins Giveaway",1,role)
-    WinnerID = re.search(r'\d',Winner).group()
-    await add_money(str(WinnerID),100)
-    
+@tasks.loop(hours=24)
+async def dailygiveaway():
+    guild = discord.utils.get(client.guilds, id=1123569723314020452)
+    channel = guild.get_channel(1139892842324566157)
+    #role = discord.utils.get(guild.get_role, id=1083474077282468021)
+    em = discord.Embed(title="Daily Coins Giveaway",color=discord.Color.yellow())
+    endTime = datetime.datetime.now() + datetime.timedelta(seconds=10)
+    em.add_field(name="",value="Prize: 100 Coins",inline=False)
+    DisplayedTime = endTime.timestamp()
+    em.add_field(name="",value= f"Ends At: {discord.utils.format_dt(datetime.datetime.fromtimestamp(DisplayedTime), 'R')}",inline=False)
+    my_msg = await channel.send(embed=em)
+    await my_msg.add_reaction("🎉")
+    await asyncio.sleep(24*60*60)
+    new_msg = await channel.fetch_message(my_msg.id)
+    users = []
+    for reaction in new_msg.reactions:
+        if reaction.emoji == '🎉':
+            async for user in reaction.users():
+                if user != client.user:
+                    users.append(user)
+    try:
+        winner = random.choice(users)
+        await channel.send(f"Congratulations {winner.mention} for winning the daily coin giveaway!")
+        try:
+            await addMoney(str(winner.id),100)
+        except:
+            users = await getBankData()
+            users[str(winner.id)] = {"balance": 100, "WalletAddress": "","TwitterAccount":""}
+            with open ("bank.json","w") as f:
+                json.dump(users,f)
+    except:
+        pass
         
+        
+    
+@client.tree.command(name="user_info", description="Displays user's info")
+async def user_info(interaction: discord.Interaction,user: discord.User): 
+    validuser = await isUser(str(interaction.user.id))
+    if validuser:
+        users = await getBankData()
+        em = discord.Embed(title=f"{user.name}'s Info",color= discord.Color.yellow())
+        Balance = users[str(user.id)]["balance"]
+        Address = users[str(user.id)]["WalletAddress"]
+        Twiiter = users[str(user.id)]["TwitterAccount"]
+        em.add_field(name="",value=f"User's Balance: {Balance}",inline=False)
+        em.add_field(name="",value=f"User's ETH Address: {Address}",inline=False)
+        em.add_field(name="",value=f"User's Twiiter Account: {Twiiter}",inline=False)
+        await interaction.response.send_message(embed=em)
+    else:
+        await interaction.response.send_message("This user isn't registered in our system",ephemeral=True)
+    
+    
+            
 @client.tree.command(name="edit_matic_wallet", description="Changes the matic wallet you saved in the eco bot")
 async def edit_matic_wallet(interaction: discord.Interaction,matic_address: str): 
     validUser = await isUser((interaction.user.id))
@@ -335,8 +353,58 @@ async def add_money(interaction: discord.Interaction,send_to:discord.User,amount
     em.add_field(name="",value=f"added {amount} :moneybag: to <@{interaction.user.id}>")
     await interaction.response.send_message(embed=em)
  
+HelperDec = {0:"Head",
+             1:"Tail"}
 
+cooldownobj = app_commands.Cooldown(1, 604.0)
 
+def cooldown_checker(interaction: discord.Interaction) -> Optional[app_commands.Cooldown]:
+    return cooldownobj
+@client.tree.command(name="headortail", description="If you win it gives you double the amount you bet, if you lose you lose your bet :( MAXIMUM BET: 100")
+@app_commands.choices(
+    choice =  [Choice(name="Head", value=0),Choice(name="Tail",value=0)]
+)
+@commands.check(owner)
+@app_commands.checks.dynamic_cooldown(cooldown_checker,key=lambda i: (i.user.id))
+async def headortail(interaction: discord.Interaction,bet: int,choice: Choice[int] ):
+    users = await getBankData()
+    if bet > 100:
+        await interaction.response.send_message("Maximum you can bet is 100 coins!",ephemeral=True)
+        app_commands.Cooldown.reset(cooldownobj)
+        return
+    validUser = await isUser(str(interaction.user.id))
+    if bet > users[str(interaction.user.id)]["balance"]:
+        await interaction.response.send_message("You don't have enough money for that bet!",ephemeral=True)
+        app_commands.Cooldown.reset(cooldownobj)
+        return
+        
+        
+    
+    if validUser:
+        botChoice = random.randint(0, 1)
+        em = discord.Embed(title="Head or Tail",color=discord.Color.yellow())
+        em.add_field(name=f":coin: : {HelperDec[botChoice]}",value="",inline=False)
+        
+        if botChoice == choice.value:
+            em.add_field(name="",value=f"You guessed correct! You won {bet*2} coins",inline=False)
+            await addMoney(str(interaction.user.id),bet)
+        else:
+            em.add_field(name="",value=f"You didn't guess correct :( You lost {bet} coins",inline=False)
+            await removeMoney(str(interaction.user.id),bet)
+        await interaction.response.send_message(embed=em)
+    else:
+        await interaction.response.send_message(content="Please create an account first by using `/joindoonz` command.",ephemeral=True)
+        
+        
+@headortail.error
+async def on_test_error(interaction: discord.Interaction,error: app_commands.AppCommandError):
+   if isinstance(error, app_commands.CommandOnCooldown):
+     RemainingHours,RemainingMin,RemainingSec = await convert_seconds(error.retry_after)
+     await interaction.response.send_message("Please wait for {} hours, {} minutes, {} seconds.".format(
+       int(RemainingHours),int(RemainingMin),int(RemainingSec)),ephemeral=True)           
+            
+
+        
     
                 
 @client.tree.command(name="dailycoins", description="Collect daily coins")
