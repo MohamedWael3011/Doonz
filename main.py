@@ -357,9 +357,11 @@ HelperDec = {0:"Head",
              1:"Tail"}
 
 cooldownobj = app_commands.Cooldown(1, 604.0)
-
+cooldown24 = app_commands.Cooldown(1,24*60*60)
 def cooldown_checker(interaction: discord.Interaction) -> Optional[app_commands.Cooldown]:
     return cooldownobj
+def cooldown_checker_daily(interaction: discord.Interaction) -> Optional[app_commands.Cooldown]:
+    return cooldown24
 @client.tree.command(name="headortail", description="If you win it gives you double the amount you bet, if you lose you lose your bet :( MAXIMUM BET: 100")
 @app_commands.choices(
     choice =  [Choice(name="Head", value=0),Choice(name="Tail",value=0)]
@@ -409,12 +411,15 @@ async def on_test_error(interaction: discord.Interaction,error: app_commands.App
                 
 @client.tree.command(name="dailycoins", description="Collect daily coins")
 @commands.check(holder)
+@app_commands.checks.dynamic_cooldown(cooldown_checker_daily,key=lambda i: (i.user.id))
 @app_commands.checks.cooldown(1, 86400.0, key=lambda i: (i.user.id))
 async def dailycoins(interaction: discord.Interaction):
     users = await getBankData()
     validUser = await isUser(str(interaction.user.id))
     if not validUser:
         interaction.response.send_message("Please create an account using the /joindoonz command",ephemeral=True)
+        app_commands.Cooldown.reset(cooldown24)
+
         return
     for role in RoleMappedToReward:
         DesiredRole = interaction.guild.get_role(role)
