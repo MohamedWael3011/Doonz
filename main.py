@@ -218,7 +218,7 @@ async def dailygiveaway():
     channel = guild.get_channel(1139892842324566157)
     #role = discord.utils.get(guild.get_role, id=1083474077282468021)
     em = discord.Embed(title="Daily Coins Giveaway",color=discord.Color.yellow())
-    endTime = datetime.datetime.now() + datetime.timedelta(seconds=10)
+    endTime = datetime.datetime.now() + datetime.timedelta(hours=24)
     em.add_field(name="",value="Prize: 100 Coins",inline=False)
     DisplayedTime = endTime.timestamp()
     em.add_field(name="",value= f"Ends At: {discord.utils.format_dt(datetime.datetime.fromtimestamp(DisplayedTime), 'R')}",inline=False)
