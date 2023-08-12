@@ -421,7 +421,7 @@ async def dailycoins(interaction: discord.Interaction):
         if DesiredRole in interaction.user.roles:
             await addMoney(str(interaction.user.id),RoleMappedToReward[role])
             em = discord.Embed(title="Daily Doonz Coins",color=discord.Color.yellow())
-            em.add_field(name="",value=f"You claimed your daily {RoleMappedToReward[role]} Doonz Coinz for your <@{role}> role.",inline=False)
+            em.add_field(name="",value=f"You claimed your daily {RoleMappedToReward[role]} Doonz Coinz for your <@&{role}> role.",inline=False)
             em.add_field(name="",value="Come back tommorow for more coinz or be active in the community or lucky in giveaways.:moneybag:",inline=False)
             await interaction.response.send_message(embed=em)
             return
