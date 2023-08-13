@@ -24,12 +24,12 @@ ShopItems = {
 }
 
 RoleMappedToReward = {
-    1136242811004518490: 500,
+    1136242811004518490: 500, 
     1136242648127123537:250,
-    1123574209059237929:150,
+    1123574209059237929:100,
+    1136240934632312983:50,
     1136240524555194398: 30,
-    1123573342738329650:10,
-    1083474077282468021:20
+    1123573342738329650:10, 
 }
 
 
@@ -117,7 +117,7 @@ class SimpleView(discord.ui.View):
 async def on_ready():
     print('Doonz is running! Currently serving {0.user}'.format(client))
     await client.tree.sync()
-    await dailygiveaway.start()
+    #await dailygiveaway.start()
 
 cd_mapping = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.user)
 @client.event
@@ -132,6 +132,7 @@ async def on_message(message):
     validUser = await isUser(str(message.author.id))
     if validUser:
         await addMoney(str(message.author.id),random.randint(1, 5))
+
 
 async def CreateAccount(userid,matic,twitter):
     users = await getBankData()
@@ -156,14 +157,15 @@ async def joindoonz(interaction: discord.Interaction,matic_address: str,twitter_
             
 @client.tree.command(name="balance", description="Checking your Doonz Coin Balance")
 async def balance(interaction: discord.Interaction):
-    try:
         users = await getBankData()
         UserBalance = users[str(interaction.user.id)]["balance"]
         em = discord.Embed(title=f"{interaction.user.name}'s Balance",color=discord.Color.yellow())
         em.add_field(name= "",value=f"Your current balance is: {UserBalance}")
-        await interaction.response.send_message(embed=em,ephemeral=True)
-    except:
-        await interaction.response.send_message(content="Please create an account first by using `/joindoonz` command.",ephemeral=True)
+        validUser = await isUser(str(interaction.user.id))
+        if validUser:
+            await interaction.response.send_message(embed=em,ephemeral=True)
+        else:    
+            await interaction.response.send_message(content="Please create an account first by using `/joindoonz` command.",ephemeral=True)
         
 
 async def generategiveaway(interaction: discord.Interaction,giveaway_minutes: int,prize: str,winners: int,role_limit: discord.Role):
@@ -356,28 +358,23 @@ async def add_money(interaction: discord.Interaction,send_to:discord.User,amount
 HelperDec = {0:"Head",
              1:"Tail"}
 
-cooldownobj = app_commands.Cooldown(1, 604.0)
-cooldown24 = app_commands.Cooldown(1,24*60*60)
-def cooldown_checker(interaction: discord.Interaction) -> Optional[app_commands.Cooldown]:
-    return cooldownobj
-def cooldown_checker_daily(interaction: discord.Interaction) -> Optional[app_commands.Cooldown]:
-    return cooldown24
+
+
 @client.tree.command(name="headortail", description="If you win it gives you double the amount you bet, if you lose you lose your bet :( MAXIMUM BET: 100")
 @app_commands.choices(
     choice =  [Choice(name="Head", value=0),Choice(name="Tail",value=0)]
 )
-@commands.check(owner)
-@app_commands.checks.dynamic_cooldown(cooldown_checker,key=lambda i: (i.user.id))
-async def headortail(interaction: discord.Interaction,bet: int,choice: Choice[int] ):
+@commands.check(holder)
+@app_commands.checks.cooldown(2, 10*60, key=lambda i: (i.user.id))
+async def headortail(interaction: discord.Interaction,bet: app_commands.Range[int, 1,100],choice: Choice[int] ):
     users = await getBankData()
-    if bet > 100:
-        await interaction.response.send_message("Maximum you can bet is 100 coins!",ephemeral=True)
-        app_commands.Cooldown.reset(cooldownobj)
-        return
     validUser = await isUser(str(interaction.user.id))
+    if not validUser:
+        users[str(interaction.user.id)] = {"balance": 0, "WalletAddress": "","TwitterAccount":""}
+        with open ("bank.json","w") as f:
+            json.dump(users,f)
     if bet > users[str(interaction.user.id)]["balance"]:
         await interaction.response.send_message("You don't have enough money for that bet!",ephemeral=True)
-        app_commands.Cooldown.reset(cooldownobj)
         return
         
         
@@ -407,21 +404,23 @@ async def on_test_error(interaction: discord.Interaction,error: app_commands.App
             
 
         
-    
+  
                 
 @client.tree.command(name="dailycoins", description="Collect daily coins")
 @commands.check(holder)
-@app_commands.checks.dynamic_cooldown(cooldown_checker_daily,key=lambda i: (i.user.id))
+@app_commands.checks.cooldown(1, 24*60*60, key=lambda i: (i.user.id))
 async def dailycoins(interaction: discord.Interaction):
     users = await getBankData()
     validUser = await isUser(str(interaction.user.id))
-    if not validUser:
-        interaction.response.send_message("Please create an account using the /joindoonz command",ephemeral=True)
-        app_commands.Cooldown.reset(cooldown24)
-        return
+
     for role in RoleMappedToReward:
         DesiredRole = interaction.guild.get_role(role)
         if DesiredRole in interaction.user.roles:
+            if not validUser:
+                users = await getBankData()
+                users[str(interaction.user.id)] = {"balance": 0, "WalletAddress": "","TwitterAccount":""}
+                with open ("bank.json","w") as f:
+                    json.dump(users,f)
             await addMoney(str(interaction.user.id),RoleMappedToReward[role])
             em = discord.Embed(title="Daily Doonz Coins",color=discord.Color.yellow())
             em.add_field(name="",value=f"You claimed your daily {RoleMappedToReward[role]} Doonz Coinz for your <@&{role}> role.",inline=False)
@@ -439,8 +438,5 @@ async def on_test_error(interaction: discord.Interaction,error: app_commands.App
 
     
 
-
-
-
-
 client.run(os.getenv('TOKEN'))
+
