@@ -143,7 +143,7 @@ async def CreateAccount(userid,matic,twitter):
 
 
 @client.tree.command(name="joindoonz", description="registering your account in Doonz's Discord eco system!")
-async def joindoonz(interaction: discord.Interaction,matic_address: str,twitter_account: str):
+async def joindoonz(interaction: discord.Interaction,matic_address: str = "",twitter_account: str = ""):
     users = await getBankData()
     if str(interaction.user.id) in users:
         await interaction.response.send_message("You already have an account!",ephemeral=True)
