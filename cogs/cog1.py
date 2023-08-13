@@ -13,7 +13,7 @@ import aiohttp
 import re
 import random
 ShopItems = {
-    "DOONZ NFT AIRDROP🎈" :(30000,"Your ticket to clain a Doonz NFT airdrop."),
+    "DOONZ NFT AIRDROP🎈" :(30000,"Your ticket to claim a Doonz NFT airdrop."),
     "DOONZ EDITIONS NFT 🎨 " :(20000,"Your ticket to claim a NFT from Doonz Editions NFT Collections on OpenSea"),
     "RAFFLE TICKET 🎟️" :(1000,"Your ticket to join special raffles here on discord. **Please not that you will be granted the role after claiming this shop item and role will be removed after the raffle ends.**"), 
 }
@@ -161,7 +161,7 @@ class StartCog(commands.Cog):
     async def shop(self,interaction: discord.Interaction):
         em = discord.Embed(title="🛒COINZ SHOP🛒",color=discord.Color.yellow())
         for key,value in ShopItems.items():
-            em.add_field(name= f"{key} \nPrice: {value[0]} Doonz Coinz :moneybag:",value=value[1],inline=False) 
+            em.add_field(name= f" {key} \nPrice: {value[0]} Doonz Coinz :moneybag:",value=value[1],inline=False) 
         await interaction.response.send_message(embed=em,ephemeral=True)
             
 
