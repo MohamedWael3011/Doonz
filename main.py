@@ -352,7 +352,7 @@ async def leaderboard(interaction: discord.Interaction):
 async def add_money(interaction: discord.Interaction,send_to:discord.User,amount: str):
     await addMoney(str(send_to.id),int(amount))
     em = discord.Embed(title="Doonz Coin Leaderboard",color=discord.Color.yellow())
-    em.add_field(name="",value=f"added {amount} :moneybag: to <@{interaction.user.id}>")
+    em.add_field(name="",value=f"added {amount} :moneybag: to <@{send_to.id}>")
     await interaction.response.send_message(embed=em)
  
 HelperDec = {0:"Head",
