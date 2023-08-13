@@ -13,9 +13,9 @@ import aiohttp
 import re
 import random
 ShopItems = {
-    "DOONZ NFT AIRDROP 🎈" :(30000,"Your ticket to claim a NFT from Doonz NFT Editions Collections on OpenSea"),
-    "DOONZ EDITIONS NFT 🎨 " :(20000,"Your ticket to clain a Doonz NFT airdrop."),
-    "RAFFLE TICKET 🎟️" :(1000,"Your ticked to join special raffles here on discord. **Please not that you will be granted the role after claiming this shop item and role will be removed after the raffle ends.**"), 
+    "DOONZ NFT AIRDROP🎈" :(30000,"Your ticket to clain a Doonz NFT airdrop."),
+    "DOONZ EDITIONS NFT 🎨 " :(20000,"Your ticket to claim a NFT from Doonz Editions NFT Collections on OpenSea"),
+    "RAFFLE TICKET 🎟️" :(1000,"Your ticket to join special raffles here on discord. **Please not that you will be granted the role after claiming this shop item and role will be removed after the raffle ends.**"), 
 }
 
 
@@ -103,7 +103,7 @@ async def CreateAccount(userid,matic,twitter):
     users[userid] = {"balance": 0, "WalletAddress": matic,"TwitterAccount":twitter}
     with open ("bank.json","w") as f:
         json.dump(users,f)    
-          
+
           
           
           
@@ -161,7 +161,7 @@ class StartCog(commands.Cog):
     async def shop(self,interaction: discord.Interaction):
         em = discord.Embed(title="🛒COINZ SHOP🛒",color=discord.Color.yellow())
         for key,value in ShopItems.items():
-            em.add_field(name= f"{key} - {value[0]} Doonz Coinz :moneybag:",value=value[1],inline=False) 
+            em.add_field(name= f"{key} \u200b Price: {value[0]} Doonz Coinz :moneybag:",value=value[1],inline=False) 
         await interaction.response.send_message(embed=em,ephemeral=True)
             
 
