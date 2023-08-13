@@ -14,7 +14,7 @@ import re
 import random
 ShopItems = {
     "DOONZ NFT AIRDROP🎈" :(30000,"Your ticket to claim a Doonz NFT airdrop."),
-    "DOONZ EDITIONS NFT 🎨 " :(20000,"Your ticket to claim a NFT from Doonz Editions NFT Collections on OpenSea"),
+    "DOONZ EDITIONS NFT 🎨 " :(20000,"Your ticket to claim a Doonz Editions NFT."),
     "RAFFLE TICKET 🎟️" :(1000,"Your ticket to join special raffles here on discord. **Please not that you will be granted the role after claiming this shop item and role will be removed after the raffle ends.**"), 
 }
 
