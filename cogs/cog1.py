@@ -161,7 +161,7 @@ class StartCog(commands.Cog):
     async def shop(self,interaction: discord.Interaction):
         em = discord.Embed(title="🛒COINZ SHOP🛒",color=discord.Color.yellow())
         for key,value in ShopItems.items():
-            em.add_field(name= f"{key} \n Price: {value[0]} Doonz Coinz :moneybag:",value=value[1],inline=False) 
+            em.add_field(name= f"{key} \nPrice: {value[0]} Doonz Coinz :moneybag:",value=value[1],inline=False) 
         await interaction.response.send_message(embed=em,ephemeral=True)
             
 
