@@ -251,7 +251,7 @@ async def dailygiveaway():
     
 @client.tree.command(name="user_info", description="Displays user's info")
 async def user_info(interaction: discord.Interaction,user: discord.User): 
-    validuser = await isUser(str(interaction.user.id))
+    validuser = await isUser(str(user.id))
     if validuser:
         users = await getBankData()
         em = discord.Embed(title=f"{user.name}'s Info",color= discord.Color.yellow())
@@ -269,7 +269,7 @@ async def user_info(interaction: discord.Interaction,user: discord.User):
             
 @client.tree.command(name="edit_matic_wallet", description="Changes the matic wallet you saved in the eco bot")
 async def edit_matic_wallet(interaction: discord.Interaction,matic_address: str): 
-    validUser = await isUser((interaction.user.id))
+    validUser = await isUser(str(interaction.user.id))
     if validUser:
         users = await getBankData()
         users[str(interaction.user.id)]["WalletAddress"] = matic_address
@@ -282,7 +282,7 @@ async def edit_matic_wallet(interaction: discord.Interaction,matic_address: str)
         
 @client.tree.command(name="edit_twiiter_account", description="Changes the twitter account you saved in the eco bot")
 async def edit_twiiter_account(interaction: discord.Interaction,twitter_acount: str): 
-    validUser = await isUser((interaction.user.id))
+    validUser = await isUser(str(interaction.user.id))
     if validUser:
         users = await getBankData()
         users[str(interaction.user.id)]["TwitterAccount"] = twitter_acount
